@@ -11,6 +11,19 @@ class Program
 
         var tracker = new IssueTracker();
 
+        RunServices( tracker );
+
+        // Força coletas e verifica sobreviventes
+        GCHelpers.FullCollect();
+        tracker.Report();
+
+        Console.WriteLine(tracker.HasSurvivors
+            ? "\n❌ Existem sobreviventes indesejados. Sua missão: corrigir o código e rodar novamente."
+            : "\n✅ GC limpo: nenhuma referência indesejada permaneceu viva.");
+    }
+
+    static void RunServices(IssueTracker tracker)
+    {
         // 1) Vazamento por evento não desinscrito
         var publisher = new Publisher();
         var subscriber = new LeakySubscriber(publisher);
@@ -30,7 +43,7 @@ class Program
         Console.WriteLine($"Payload length: {payload.Length}");
 
         // 5) Recurso externo sem Dispose (usar finalizer como 'rede de segurança')
-        var logger = new Logger("log.txt");
+        using var logger = new Logger("log.txt");
         logger.WriteLines(10);
         tracker.Track("logger", logger);
 
@@ -38,18 +51,14 @@ class Program
         publisher.Raise();
 
         // Remover referências locais (mas problemas permanecem)
+        subscriber.Dispose();
         subscriber = null;
         publisher = null;
+        pinner.Dispose();
+        pinner = null;
         pinned = null;
-        logger = null;
+        logger.Dispose();
         lohBuffer = null;
-
-        // Força coletas e verifica sobreviventes
-        GCHelpers.FullCollect();
-        tracker.Report();
-
-        Console.WriteLine(tracker.HasSurvivors
-            ? "\n❌ Existem sobreviventes indesejados. Sua missão: corrigir o código e rodar novamente."
-            : "\n✅ GC limpo: nenhuma referência indesejada permaneceu viva.");
+        BigBufferHolder.ClearCache();
     }
 }

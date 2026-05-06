@@ -4,6 +4,7 @@ class LeakySubscriber
 {
     private static readonly List<LeakySubscriber> _registry = new();
     private Publisher _publisher;
+    //private bool _disposed;
 
     public LeakySubscriber(Publisher publisher)
     {
@@ -13,4 +14,10 @@ class LeakySubscriber
     }
 
     private void Handle() { /* noop */ }
+
+    public void Dispose()
+    {
+        _publisher.OnSomething -= Handle;
+        _registry.Remove(this);
+    }
 }

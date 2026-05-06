@@ -11,4 +11,9 @@ static class BigBufferHolder
         GlobalCache.Add(data);
         return data;
     }
+
+    public static void ClearCache()
+    {
+        GlobalCache.Clear();
+    }
 }
